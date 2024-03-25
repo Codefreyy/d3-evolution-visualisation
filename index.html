@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <!-- <script src="https://api.mapbox.com/mapbox-gl-js/v2.7.0/mapbox-gl.js"></script> -->
+    <script src="https://d3js.org/d3-array.v2.min.js"></script>
+    <script src="https://d3js.org/d3-scale.v3.min.js"></script>
+    <script src="https://d3js.org/d3-axis.v2.min.js"></script>
+    <script src="https://d3js.org/d3-dispatch.v3.min.js"></script>
+    <script src="https://d3js.org/d3-drag.v2.min.js"></script>
+    <script src="https://d3js.org/d3-selection.v2.min.js"></script>
+
+    <link
+      href="https://api.mapbox.com/mapbox-gl-js/v2.7.0/mapbox-gl.css"
+      rel="stylesheet"
+    />
+    <style>
+      section {
+        max-width: 1200px;
+        margin-inline: auto;
+        margin-top: 10px;
+      }
+      #map {
+        position: relative;
+        z-index: 0;
+        width: 100%;
+        height: 500px;
+      }
+
+      #scatter_plot {
+        display: flex;
+        gap: 10px;
+        align-items: end;
+      }
+
+      #legend {
+        max-height: 200px;
+        overflow-y: scroll;
+      }
+    </style>
+  </head>
+  <body>
+    <section>
+      <div id="scatter_plot">
+        <svg width="960" height="500"></svg>
+        <div id="legend"></div>
+      </div>
+      <div id="slider-container">
+        <svg id="slider" width="960" height="100"></svg>
+      </div>
+      <div id="tooltip" class="tooltip" style="opacity: 0"></div>
+    </section>
+
+    <script>
+      ;(async () => {
+        const allData = await d3.csv("/data/Evolution.csv")
+        // 只取前300个数据进行绘图以减少卡顿
+        let data = allData.slice(0, 300).map((d) => {
+          d.Height = +d.Height // 将字符串转换为浮点数
+          d.Cranial_Capacity = +d.Cranial_Capacity // 将字符串转换为浮点数
+          // 将性别二态性映射到数值
+          switch (d.Sexual_Dimorphism) {
+            case "high":
+              d.Sexual_Dimorphism_Num = 20 // 高性别二态性对应较大的数值
+              break
+            case "medium":
+              d.Sexual_Dimorphism_Num = 10 // 中等性别二态性对应中等的数值
+              break
+            case "low":
+              d.Sexual_Dimorphism_Num = 5 // 低性别二态性对应较小的数值
+              break
+            default:
+              d.Sexual_Dimorphism_Num = 2 // 未知或未定义的类别对应最小的数值
+          }
+          return d
+        })
+        console.log(data)
+
+        // Set the dimensions and margins of the graph
+        var margin = { top: 20, right: 20, bottom: 30, left: 50 },
+          width = 960 - margin.left - margin.right,
+          height = 500 - margin.top - margin.bottom
+
+        // Append the svg object to the body of the page
+        var svg = d3
+          .select("svg")
+          .attr("width", width + margin.left + margin.right)
+          .attr("height", height + margin.top + margin.bottom)
+          .append("g")
+          .attr(
+            "transform",
+            "translate(" + margin.left + "," + margin.top + ")"
+          )
+
+        // X axis
+        var x = d3
+          .scaleLinear()
+          .domain([
+            0,
+            d3.max(data, function (d) {
+              return +d.Height
+            }),
+          ])
+          .range([0, width])
+        svg
+          .append("g")
+          .attr("transform", "translate(0," + height + ")")
+          .call(d3.axisBottom(x))
+
+        // Y axis
+        var y = d3
+          .scaleLinear()
+          .domain([
+            0,
+            d3.max(data, function (d) {
+              return +d.Cranial_Capacity
+            }),
+          ])
+          .range([height, 0])
+        svg.append("g").call(d3.axisLeft(y))
+
+        // Scale for bubble size
+        var z = d3
+          .scaleSqrt()
+          .domain([
+            0,
+            d3.max(data, function (d) {
+              return +d.Sexual_Dimorphism_Num
+            }),
+          ])
+          .range([2, 20])
+
+        // Scale for bubble color
+        var myColor = d3
+          .scaleOrdinal()
+          .domain([...new Set(data.map((item) => item.Habitat))])
+          .range(d3.schemeSet2)
+
+        // Add dots
+        svg
+          .append("g")
+          .selectAll("dot")
+          .data(data)
+          .enter()
+          .append("circle")
+          .attr("cx", function (d) {
+            return x(d.Height)
+          })
+          .attr("cy", function (d) {
+            return y(d.Cranial_Capacity)
+          })
+          .attr("r", function (d) {
+            return z(d.Sexual_Dimorphism_Num)
+          })
+          .style("fill", function (d) {
+            return myColor(d.Habitat)
+          })
+          .attr("class", "dot")
+          .style("opacity", "0.7")
+          .attr("stroke", "black")
+          .on("mouseover", function (event, d) {
+            d3.select("#tooltip").transition().duration(200).style("opacity", 1)
+            d3.select("#tooltip")
+              .html(
+                "Species: " +
+                  d["Genus_&_Specie"] +
+                  "<br/>Height: " +
+                  d.Height +
+                  "<br/>Cranial Capacity: " +
+                  d.Cranial_Capacity
+              )
+              .style("left", event.pageX + 10 + "px")
+              .style("top", event.pageY - 15 + "px")
+          })
+          .on("mouseout", function (d) {
+            d3.select("#tooltip").transition().duration(500).style("opacity", 0)
+          })
+
+        // 假设 'svg' 是您的散点图的 SVG 元素
+        var legendSpace = 20 // 空间间隔
+
+        var species = [...new Set(data.map((d) => d["Genus_&_Specie"]))] // 获取所有独特的种属
+
+        var legend = d3
+          .select("#legend")
+          .selectAll("div")
+          .data(species)
+          .enter()
+          .append("div")
+
+        // 添加复选框
+        legend
+          .append("input")
+          .attr("type", "checkbox")
+          .attr("checked", true)
+          .attr("id", function (d, i) {
+            return "chk_" + i
+          }) // 给每个复选框一个独特的ID
+          .on("change", update) // 当复选框的状态改变时，更新图表
+
+        // 添加标签
+        legend
+          .append("label")
+          .attr("for", function (d, i) {
+            return "chk_" + i
+          })
+          .text(function (d) {
+            return d
+          })
+
+        // Function to update the chart
+        function update() {
+          var selected = []
+          legend.selectAll("input:checked").each(function (d) {
+            selected.push(d)
+          })
+
+          console.log("selected", selected)
+          svg
+            .selectAll(".dot")
+            .style("opacity", 0.1) // 先将所有点变淡
+            .filter(function (d) {
+              return selected.includes(d["Genus_&_Specie"])
+            })
+            .style("opacity", 0.7) // 只显示选中的种属
+        }
+
+        // 时间轴的尺寸和边距
+        var sliderMargin = { top: 0, right: 50, bottom: 0, left: 50 },
+          sliderWidth = 960 - sliderMargin.left - sliderMargin.right,
+          sliderHeight = 100 - sliderMargin.top - sliderMargin.bottom
+
+        // 时间轴SVG
+        var sliderSvg = d3
+          .select("#slider")
+          .attr("width", sliderWidth + sliderMargin.left + sliderMargin.right)
+          .attr("height", sliderHeight + sliderMargin.top + sliderMargin.bottom)
+          .append("g")
+          .attr(
+            "transform",
+            "translate(" + sliderMargin.left + "," + sliderMargin.top + ")"
+          )
+
+        // 时间轴比例尺
+        var timeScale = d3
+          .scaleLinear()
+          .domain(
+            d3
+              .extent(data, function (d) {
+                return d.Time
+              })
+              .reverse()
+          )
+          .range([0, sliderWidth])
+          .clamp(true)
+
+        // 定义刷子
+        var brush = d3
+          .brushX()
+          .extent([
+            [0, 0],
+            [sliderWidth, sliderHeight],
+          ])
+          .on("end", brushended)
+
+        // 时间轴轴线
+        sliderSvg
+          .append("g")
+          .attr("class", "x axis")
+          .attr("transform", "translate(0," + sliderHeight / 2 + ")")
+          .call(
+            d3
+              .axisBottom(timeScale)
+              .ticks(10)
+              .tickFormat((d) => d + " mya")
+          )
+          .selectAll("path")
+          .style("stroke", "skyblue") // 更改时间轴颜色
+          .style("stroke-width", "1") // 更改时间轴粗细
+
+        // 应用刷子到时间轴上
+        sliderSvg.append("g").attr("class", "brush").call(brush)
+        sliderSvg
+          .selectAll(".tick line") // 更改刻度线样式
+          .style("stroke", "#aaa")
+          .style("stroke-width", "1")
+
+        // 刷子的事件处理函数
+        function brushended(event) {
+          var s = event.selection
+          if (!s) {
+            // if (!idleTimeout)
+            //   return (idleTimeout = setTimeout(idled, idleDelay))
+            timeScale.domain([
+              0,
+              d3.max(data, function (d) {
+                return d.Time
+              }),
+            ])
+          } else {
+            var selectedRange = s.map(timeScale.invert, timeScale)
+            svg.selectAll(".dot").style("opacity", function (d) {
+              return d.Time >= selectedRange[0] && d.Time <= selectedRange[1]
+                ? 0.7
+                : 0.1
+            })
+            legend.selectAll("div").style("display", function (d) {
+              var isTimeInRange = data.some(
+                (dat) =>
+                  dat["Genus_&_Specie"] === d &&
+                  dat.Time >= selectedRange[0] &&
+                  dat.Time <= selectedRange[1]
+              )
+              return isTimeInRange ? "" : "none"
+            })
+            sliderSvg.select(".brush").call(brush.move, null) // If the user selected a range, clear the brush after the selection
+          }
+        }
+      })()
+    </script>
+  </body>
+</html>
