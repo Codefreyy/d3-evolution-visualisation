@@ -7,8 +7,7 @@
     <title>Wealth, Gender and Age</title>
     <style>
       * {
-        font-family: "Noto Sans", "Gill Sans MT", Calibri, "Trebuchet MS",
-          sans-serif;
+        font-family: "sans-serif";
         font-weight: 500;
       }
       .bubble {
@@ -248,6 +247,12 @@
             svg.selectAll(".bubble").style("fill-opacity", function (d) {
               return d.continent === selectedContinent ? 0.8 : 0.1
             })
+
+            // 将选中大洲的气泡移动到顶层
+            svg
+              .selectAll(".bubble")
+              .filter((d) => d.continent === selectedContinent)
+              .raise() // 将符合条件的元素移动到其父元素的末尾，使其在顶层显示
           })
           .on("mouseout", function (event, selectedContinent) {
             svg.selectAll(".bubble").style("fill-opacity", 0.8)
@@ -274,6 +279,25 @@
           })
           .style("fill-opacity", 0.7)
 
+        // Y轴网格线
+        svg
+          .append("g")
+          .attr("class", "grid")
+          .call(d3.axisLeft(y).tickSize(-width).tickFormat(""))
+          .selectAll("line")
+          .style("stroke", "lightgrey")
+          .style("stroke-opacity", "0.7")
+
+        // X轴网格线
+        svg
+          .append("g")
+          .attr("class", "grid")
+          .attr("transform", "translate(0," + height + ")")
+          .call(d3.axisBottom(x).tickSize(-height).tickFormat(""))
+          .selectAll("line")
+          .style("stroke", "lightgrey")
+          .style("stroke-opacity", "0.7")
+
         // 添加悬浮提示
         var tooltip = d3.select(".tooltip")
         svg
@@ -281,12 +305,14 @@
           .on("mouseover", function (event, d) {
             tooltip
               .style("visibility", "visible")
-              .text(
+              .html(
                 d.country +
-                  ": Billionaires(Num) " +
+                  " <br/>Billionaires(Num) " +
                   d.billionaires +
-                  ", Total Wealth:" +
-                  d.total_wealth
+                  "<br/>Total Wealth: " +
+                  d.total_wealth +
+                  "<br/>Population: " +
+                  d.population
               )
           })
           .on("mousemove", function (event, d) {
