@@ -7,7 +7,7 @@
     <title>Wealth, Gender and Age</title>
     <style>
       * {
-        font-family: "Gill Sans", "Gill Sans MT", Calibri, "Trebuchet MS",
+        font-family: "Noto Sans", "Gill Sans MT", Calibri, "Trebuchet MS",
           sans-serif;
         font-weight: 500;
       }
@@ -25,7 +25,7 @@
       }
       /* 添加一些样式来美化坐标轴 */
       .axis text {
-        font: 10px sans-serif;
+        font-size: 16px;
       }
       .axis path,
       .axis line {
@@ -82,17 +82,18 @@
 
           return accumulator
         }, {})
-
-        // 然后，从处理过的数据对象中提取值数组
         finalData = Object.values(processedData)
-        console.log("fi", finalData)
 
+        console.log("finalData", finalData)
+
+        // 画布大小
         var svgWidth = 960,
           svgHeight = 600
         var margin = { top: 40, right: 40, bottom: 100, left: 60 }
         var width = svgWidth - margin.left - margin.right
         var height = svgHeight - margin.top - margin.bottom
 
+        // 把矢量图放到页面上
         var svg = d3
           .select("#chart")
           .append("svg")
@@ -104,6 +105,7 @@
             "translate(" + margin.left + "," + margin.top + ")"
           )
 
+        // 添加图表背景
         svg
           .append("rect")
           .attr("x", 0)
@@ -112,16 +114,17 @@
           .attr("height", height) // 根据需要调整高度
           .style("fill", "#fff") // 调整背景颜色
 
-        // 修改X轴标题并添加问号
+        // x轴标题
         var xTitle = svg
           .append("text")
           .attr("x", width / 2)
-          .attr("y", height + margin.bottom - 20)
+          .attr("y", height + margin.bottom - 40)
           .style("text-anchor", "middle")
-          .style("font-size", "16px") // 调整字体大小
+          .style("font-size", "20px") // 调整字体大小
           .style("color", "#383e40")
           .text("Sum wealth of billions")
 
+        // x轴标题tooltip
         xTitle
           .append("tspan")
           .attr("dx", "1em") // 问号与标题的距离
@@ -132,7 +135,7 @@
           .append("title") // 添加解释性文本
           .text("Total wealth in billions of dollars.")
 
-        // 对Y轴标题进行相同的操作
+        // y轴标题
         var yTitle = svg
           .append("text")
           .attr("transform", "rotate(-90)")
@@ -140,18 +143,20 @@
           .attr("x", 0 - height / 2)
           .attr("dy", "1em")
           .style("text-anchor", "middle")
-          .style("font-size", "16px") // 调整字体大小
+          .style("font-size", "20px")
           .text("Life expectancy")
 
+        // y轴标题tooltip
         yTitle
           .append("tspan")
           .attr("dx", "1em") // 问号与标题的距离
           .text("❓")
-          .style("font-size", "16px") // 调整问号大小
+          .style("font-size", "14px") // 调整问号大小
           .style("cursor", "pointer") // 鼠标悬浮时变成手形
           .append("title") // 添加解释性文本
           .text("Average life expectancy at birth.")
 
+        // x轴
         var x = d3
           .scaleLinear()
           .domain([
@@ -162,9 +167,9 @@
           ])
           .range([0, width])
           .nice()
-
+        // y轴
         var y = d3.scaleLinear().domain([50, 90]).range([height, 0])
-
+        // bubble size
         var z = d3
           .scaleSqrt()
           .domain([
@@ -174,9 +179,10 @@
             }),
           ])
           .range([6, 40])
-
+        // bubble color
         var color = d3.scaleOrdinal(d3.schemeCategory10)
 
+        // 把bubble放到图表上
         svg
           .selectAll(".bubble")
           .data(finalData)
@@ -197,13 +203,20 @@
           })
           .style("fill-opacity", 0.7)
 
-        // 添加X轴和Y轴
+        // 添加X轴
         svg
           .append("g")
           .attr("transform", "translate(0," + height + ")")
-          .call(d3.axisBottom(x).tickSize(-height))
-
-        svg.append("g").call(d3.axisLeft(y).ticks(10).tickSize(-width))
+          .call(
+            d3
+              .axisBottom(x)
+              .tickValues([
+                31250, 62500, 125000, 250000, 500000, 1000000, 2000000, 4000000,
+                8000000,
+              ])
+          )
+        // 添加y轴
+        svg.append("g").call(d3.axisLeft(y).ticks(10))
 
         // 添加悬浮提示
         var tooltip = d3.select(".tooltip")
