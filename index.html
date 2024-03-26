@@ -21,6 +21,7 @@
         font-weight: 300;
         margin: 10px;
         background-color: #fefefe;
+        color: #465562;
       }
 
       .ubuntu-medium {
@@ -29,15 +30,20 @@
         font-style: normal;
       }
 
-      h3 {
+      h1 {
         font-weight: 800;
         font-family: "Noto Sans";
         font-size: 40px;
         margin-top: 10px;
+        color: #465562;
       }
 
-      #chart {
-        margin: 50px 0px;
+      h3 {
+        font-weight: 800;
+        font-family: "Noto Sans";
+        font-size: 20px;
+        margin-top: 10px;
+        color: #465562;
       }
 
       .bubble {
@@ -81,13 +87,45 @@
       .grid path {
         stroke-width: 0;
       }
+
+      a {
+        text-decoration: none;
+      }
+
+      .reference {
+        font-size: 13px;
+      }
+
+      .desc {
+        max-width: 600px;
+      }
     </style>
   </head>
 
   <body>
-    <h3 class="ubuntu-medium">Wealth, Longevity, and Generational Shifts</h3>
+    <h1 class="ubuntu-medium">Wealth, Longevity, and Generational Shifts</h1>
+    <div class="desc">
+      Our visulisation aims to visualise..Our visulisation aims to
+      visualise..Our visulisation aims to visualise..Our visulisation aims to
+      visualise..
+    </div>
     <div id="chart"></div>
     <div class="tooltip"></div>
+    <div class="reference">
+      <h3>References</h3>
+      <p>
+        [1]
+        <a href="https://www.gapminder.org/fw/world-health-chart/"
+          >https://www.kaggle.com/datasets/nelgiriyewithana/billionaires-statistics-dataset</a
+        >
+      </p>
+      <p>
+        [2]
+        <a href="https://www.gapminder.org/fw/world-health-chart/"
+          >https://www.gapminder.org/fw/world-health-chart/</a
+        >
+      </p>
+    </div>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script>
       ;(async () => {
@@ -136,8 +174,8 @@
 
         // 画布大小
         var svgWidth = 900,
-          svgHeight = 600
-        var margin = { top: 40, right: 200, bottom: 100, left: 60 }
+          svgHeight = 550
+        var margin = { top: 10, right: 170, bottom: 90, left: 60 }
         var width = svgWidth - margin.left - margin.right
         var height = svgHeight - margin.top - margin.bottom
 
