@@ -5,14 +5,39 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Wealth, Gender and Age</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap"
+      rel="stylesheet"
+    />
+
     <style>
+      html {
+        overflow: hidden;
+      }
       * {
         font-family: "sans-serif";
+        font-weight: 300;
+        margin: 10px;
+        background-color: #fefefe;
+      }
+
+      .ubuntu-medium {
+        font-family: "Ubuntu", sans-serif;
         font-weight: 500;
+        font-style: normal;
+      }
+
+      h3 {
+        font-weight: 800;
+        font-family: "Noto Sans";
+        font-size: 40px;
+        margin-top: 10px;
       }
 
       #chart {
-        margin: 100px 20px;
+        margin: 50px 0px;
       }
 
       .bubble {
@@ -34,6 +59,7 @@
 
       .axis text {
         font-size: 13px;
+        color: #465562;
       }
 
       .axis path,
@@ -59,6 +85,7 @@
   </head>
 
   <body>
+    <h3 class="ubuntu-medium">Wealth, Longevity, and Generational Shifts</h3>
     <div id="chart"></div>
     <div class="tooltip"></div>
     <script src="https://d3js.org/d3.v7.min.js"></script>
@@ -71,17 +98,21 @@
             country_of_residence,
             wealth,
             life_expectancy,
+            age,
             country_pop,
             continent,
           } = current
           wealth = +wealth // 将字符串转换为数字
           country_pop = +country_pop // 转换为数字
+          age = +age // 确保年龄是数字类型
 
           // 如果这个国家还没有被加入到累加器中，添加它
           if (!accumulator[country_of_residence]) {
             accumulator[country_of_residence] = {
               country: country_of_residence,
               total_wealth: 0,
+              total_age: 0, // 新增：总年龄
+              average_age: 0, // 新增：平均年龄
               average_life_expectancy: life_expectancy,
               population: country_pop,
               continent: continent,
@@ -91,7 +122,11 @@
 
           // 累加财富和亿万富翁人数
           accumulator[country_of_residence].total_wealth += wealth
+          accumulator[country_of_residence].total_age += age // 累加年龄
           accumulator[country_of_residence].billionaires += 1
+          accumulator[country_of_residence].average_age =
+            accumulator[country_of_residence].total_age /
+            accumulator[country_of_residence].billionaires // 计算平均年龄
 
           return accumulator
         }, {})
@@ -100,7 +135,7 @@
         console.log("finalData", finalData)
 
         // 画布大小
-        var svgWidth = 1080,
+        var svgWidth = 900,
           svgHeight = 600
         var margin = { top: 40, right: 200, bottom: 100, left: 60 }
         var width = svgWidth - margin.left - margin.right
@@ -127,14 +162,14 @@
           .style("font-size", "24px") // 调整字体大小
           .text("Global Wealth and Life Expectancy") // 更改为您的标题
 
-        // 添加图表背景
-        svg
-          .append("rect")
-          .attr("x", 0)
-          .attr("y", 0) // 根据需要调整位置
-          .attr("width", width)
-          .attr("height", height) // 根据需要调整高度
-          .style("fill", "#fff") // 调整背景颜色
+        // // 添加图表背景
+        // svg
+        //   .append("rect")
+        //   .attr("x", 0)
+        //   .attr("y", 0) // 根据需要调整位置
+        //   .attr("width", width)
+        //   .attr("height", height) // 根据需要调整高度
+        //   .style("fill", "#fff") // 调整背景颜色
 
         // x轴标题
         var xTitle = svg
@@ -142,9 +177,9 @@
           .attr("x", width / 2)
           .attr("y", height + margin.bottom - 40)
           .style("text-anchor", "middle")
-          .style("font-size", "20px") // 调整字体大小
+          .style("font-size", "16px") // 调整字体大小
           .style("color", "#383e40")
-          .text("Total wealth of billionaries")
+          .text("Total wealth of billionaries (US dollars trillion)")
 
         // y轴标题
         var yTitle = svg
@@ -154,8 +189,9 @@
           .attr("x", 0 - height / 2)
           .attr("dy", "1em")
           .style("text-anchor", "middle")
-          .style("font-size", "20px")
-          .text("Life expectancy")
+          .style("font-size", "16px")
+          .style("color", "#383e40")
+          .text("Average Age of Billionaires (Years)")
 
         const customTickValues = [
           31250, 62500, 125000, 250000, 500000, 1000000, 2000000, 4000000,
@@ -163,7 +199,7 @@
         ]
         // x轴
         var x = d3
-          .scaleLinear()
+          .scaleSqrt()
           .domain([
             0,
             d3.max(finalData, function (d) {
@@ -173,20 +209,20 @@
           .range([0, width])
           .nice()
 
-        // y轴
-        var y = d3.scaleLinear().domain([50, 90]).range([height, 0])
-
+        var y = d3
+          .scaleLinear()
+          .domain([
+            d3.min(finalData, (d) => d.average_age), // 使用平均年龄的最小值作为Y轴的起点
+            d3.max(finalData, (d) => d.average_age), // 使用平均年龄的最大值作为Y轴的终点
+          ])
+          .range([height, 0])
         // 添加X轴
         svg
           .append("g")
           .attr("class", "axis")
           .attr("transform", "translate(0," + height + ")")
-          .call(
-            d3
-              .axisBottom(x)
-              .tickValues(customTickValues)
-              .tickFormat((d) => `${d / 1000} k billion`)
-          )
+          .call(d3.axisBottom(x).tickFormat((d) => `${d / 10000}`))
+
         // 添加y轴
         svg.append("g").attr("class", "axis").call(d3.axisLeft(y).ticks(10))
 
@@ -259,6 +295,7 @@
           .on("mouseout", function (event, selectedContinent) {
             svg.selectAll(".bubble").style("fill-opacity", 0.8)
           })
+          .style("cursor", "pointer")
 
         // 把bubble放到图表上
         svg
@@ -312,12 +349,19 @@
                   " <br/>Billionaires Number: " +
                   d.billionaires +
                   "<br/>Total Wealth: " +
-                  d.total_wealth +
-                  " billion" +
+                  d.total_wealth / 10000 +
+                  " trillion" +
                   "<br/>Population: " +
                   (d.population / 1e6).toFixed(2) +
                   " million"
               )
+
+            // 当鼠标悬浮在一个气泡上时，将这个气泡的透明度设为0.8，并将其他所有气泡的透明度设为0.1
+            d3.selectAll(".bubble").style("opacity", 0.1) // 首先将所有气泡的透明度设置为0.1
+            d3.select(this).style("opacity", 0.8) // 然后将当前气泡的透明度设置为0.8
+
+            // 修改鼠标指针为手形
+            d3.select(this).style("cursor", "pointer")
           })
           .on("mousemove", function (event, d) {
             tooltip
@@ -326,6 +370,11 @@
           })
           .on("mouseout", function () {
             tooltip.style("visibility", "hidden")
+            // 当鼠标移出气泡时，恢复所有气泡的透明度为0.7
+            d3.selectAll(".bubble").style("opacity", 0.8)
+
+            // 恢复鼠标指针为默认形状
+            d3.select(this).style("cursor", "default")
           })
       })()
     </script>
