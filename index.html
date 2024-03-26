@@ -10,6 +10,11 @@
         font-family: "sans-serif";
         font-weight: 500;
       }
+
+      #chart {
+        margin: 100px 20px;
+      }
+
       .bubble {
         stroke: #fff;
         stroke-width: 1px;
@@ -23,14 +28,23 @@
         visibility: hidden;
       }
 
-      text {
-        font-size: 16px;
+      .axis line {
+        display: none;
       }
+
+      .axis text {
+        font-size: 13px;
+      }
+
       .axis path,
       .axis line {
         fill: none;
         stroke: #000;
         shape-rendering: crispEdges;
+      }
+
+      .axis line {
+        display: none;
       }
 
       .grid line {
@@ -104,6 +118,15 @@
             "translate(" + margin.left + "," + margin.top + ")"
           )
 
+        // 添加图表标题
+        svg
+          .append("text")
+          .attr("x", width / 2)
+          .attr("y", -20) // 根据需要调整y坐标，以确保标题不超出画布
+          .attr("text-anchor", "middle")
+          .style("font-size", "24px") // 调整字体大小
+          .text("Global Wealth and Life Expectancy") // 更改为您的标题
+
         // 添加图表背景
         svg
           .append("rect")
@@ -123,17 +146,6 @@
           .style("color", "#383e40")
           .text("Total wealth of billionaries")
 
-        // x轴标题tooltip
-        xTitle
-          .append("tspan")
-          .attr("dx", "1em") // 问号与标题的距离
-          .text("❓")
-          .style("font-size", "16px") // 调整问号大小
-          .style("cursor", "pointer") // 鼠标悬浮时变成手形
-          .style("color", "383e40")
-          .append("title") // 添加解释性文本
-          .text("Total wealth in billions of dollars.")
-
         // y轴标题
         var yTitle = svg
           .append("text")
@@ -144,16 +156,6 @@
           .style("text-anchor", "middle")
           .style("font-size", "20px")
           .text("Life expectancy")
-
-        // y轴标题tooltip
-        yTitle
-          .append("tspan")
-          .attr("dx", "1em") // 问号与标题的距离
-          .text("❓")
-          .style("font-size", "14px") // 调整问号大小
-          .style("cursor", "pointer") // 鼠标悬浮时变成手形
-          .append("title") // 添加解释性文本
-          .text("Average life expectancy at birth.")
 
         const customTickValues = [
           31250, 62500, 125000, 250000, 500000, 1000000, 2000000, 4000000,
@@ -183,10 +185,10 @@
             d3
               .axisBottom(x)
               .tickValues(customTickValues)
-              .tickFormat((d) => d / 1000 + "k")
+              .tickFormat((d) => `${d / 1000} k billion`)
           )
         // 添加y轴
-        svg.append("g").call(d3.axisLeft(y).ticks(10))
+        svg.append("g").attr("class", "axis").call(d3.axisLeft(y).ticks(10))
 
         // bubble size
         var z = d3
@@ -204,7 +206,7 @@
           .domain(finalData.map((d) => d.continent))
 
         // 图例
-        var legendPosition = { x: width + 20, y: height - 200 }
+        var legendPosition = { x: width + 40, y: height - 200 }
         // 添加图例
         var legend = svg
           .selectAll(".legend")
@@ -286,7 +288,7 @@
           .call(d3.axisLeft(y).tickSize(-width).tickFormat(""))
           .selectAll("line")
           .style("stroke", "lightgrey")
-          .style("stroke-opacity", "0.7")
+          .style("stroke-opacity", "0.5")
 
         // X轴网格线
         svg
@@ -296,7 +298,7 @@
           .call(d3.axisBottom(x).tickSize(-height).tickFormat(""))
           .selectAll("line")
           .style("stroke", "lightgrey")
-          .style("stroke-opacity", "0.7")
+          .style("stroke-opacity", "0.4")
 
         // 添加悬浮提示
         var tooltip = d3.select(".tooltip")
@@ -307,12 +309,14 @@
               .style("visibility", "visible")
               .html(
                 d.country +
-                  " <br/>Billionaires(Num) " +
+                  " <br/>Billionaires Number: " +
                   d.billionaires +
                   "<br/>Total Wealth: " +
                   d.total_wealth +
+                  " billion" +
                   "<br/>Population: " +
-                  d.population
+                  (d.population / 1e6).toFixed(2) +
+                  " million"
               )
           })
           .on("mousemove", function (event, d) {
