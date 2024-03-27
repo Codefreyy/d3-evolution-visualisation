@@ -112,19 +112,12 @@
       against the backdrop of national tax rates.
     </div>
     <div id="chart"></div>
-    <div id="bar"></div>
     <div class="tooltip"></div>
     <div class="reference">
       <h3>References</h3>
+
       <p>
-        [1] Elgiriyewithana, N. (2023, September 29). Billionaires statistics
-        dataset (2023). Kaggle.<a
-          href="https://www.gapminder.org/fw/world-health-chart/"
-          >https://www.kaggle.com/datasets/nelgiriyewithana/billionaires-statistics-dataset</a
-        >
-      </p>
-      <p>
-        [2] Javier_SAB. (2024, February 24).
+        [1] Javier_SAB. (2024, February 24).
         <a
           href="Billionaires dataset cleaned. Kaggle. https://www.kaggle.com/datasets/javiersab/billionaires-dataset-cleaned/data "
           >Billionaires dataset cleaned. Kaggle.
@@ -132,7 +125,7 @@
         </a>
       </p>
       <p>
-        [3] Rosling, H. (n.d.). World Health Chart. Gapminder.<a
+        [2] Rosling, H. (n.d.). World Health Chart. Gapminder.<a
           href="https://www.gapminder.org/fw/world-health-chart/"
           >https://www.gapminder.org/fw/world-health-chart/</a
         >
@@ -143,7 +136,6 @@
       ;(async () => {
         let finalData
         const data = await d3.csv("./data/df_ready.csv")
-        console.log(data)
         const processedData = data.reduce((accumulator, current) => {
           let {
             country_of_residence,
@@ -177,8 +169,6 @@
           return accumulator
         }, {})
         finalData = Object.values(processedData)
-
-        console.log("finalData", finalData)
 
         // svg size
         var svgWidth = 1000,
@@ -329,7 +319,7 @@
           })
           .attr("r", 10)
           .style("fill", color)
-          .style("opacity", 0.8)
+          .style("opacity", 0.7)
 
         // legend text
         legend
@@ -348,8 +338,8 @@
         // hover and filter
         legend
           .on("mouseover", function (event, selectedContinent) {
-            svg.selectAll(".bubble").style("fill-opacity", function (d) {
-              return d.continent === selectedContinent ? 0.8 : 0.1
+            svg.selectAll(".bubble").style("opacity", function (d) {
+              return d.continent === selectedContinent ? 0.7 : 0.1
             })
 
             svg
@@ -367,7 +357,7 @@
               .attr("r", 12) // Increase radius
           })
           .on("mouseout", function (event, selectedContinent) {
-            svg.selectAll(".bubble").style("fill-opacity", 0.8)
+            svg.selectAll(".bubble").style("opacity", 0.7)
 
             svg
               .selectAll(".legend circle")
@@ -399,7 +389,7 @@
           .style("fill", function (d) {
             return color(d.continent)
           })
-          .style("fill-opacity", 0.8)
+          .style("opacity", 0.7)
 
         // hover and show tooltip
         var tooltip = d3.select(".tooltip")
@@ -424,7 +414,8 @@
               )
 
             d3.selectAll(".bubble").style("opacity", 0.1)
-            d3.select(this).style("opacity", 0.8)
+            d3.select(this).style("opacity", 0.7)
+
             d3.select(this).style("cursor", "pointer")
           })
           .on("mousemove", function (event, d) {
@@ -434,7 +425,7 @@
           })
           .on("mouseout", function () {
             tooltip.style("visibility", "hidden")
-            d3.selectAll(".bubble").style("opacity", 0.8)
+            d3.selectAll(".bubble").style("opacity", 0.7)
             d3.select(this).style("cursor", "default")
           })
       })()
