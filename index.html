@@ -88,40 +88,39 @@
         stroke-width: 0;
       }
 
-      a {
-        text-decoration: none;
-      }
-
       .reference {
         font-size: 13px;
       }
 
       .desc {
-        max-width: 600px;
+        max-width: 800px;
       }
     </style>
   </head>
 
   <body>
-    <h1 class="ubuntu-medium">Wealth, Longevity, and Generational Shifts</h1>
+    <h1 class="ubuntu-medium">
+      Billionaires and Borders: Tracing the Wealth and Tax Policies Worldwide
+    </h1>
     <div class="desc">
-      Our visulisation aims to visualise..Our visulisation aims to
-      visualise..Our visulisation aims to visualise..Our visulisation aims to
-      visualise..
+      This interactive tool delves deep into the realms of global finance,
+      showcasing the cumulative wealth of billionaires in each country plotted
+      against the backdrop of national tax rates.
     </div>
     <div id="chart"></div>
     <div class="tooltip"></div>
     <div class="reference">
       <h3>References</h3>
       <p>
-        [1]
-        <a href="https://www.gapminder.org/fw/world-health-chart/"
+        [1] Elgiriyewithana, N. (2023, September 29). Billionaires statistics
+        dataset (2023). Kaggle.<a
+          href="https://www.gapminder.org/fw/world-health-chart/"
           >https://www.kaggle.com/datasets/nelgiriyewithana/billionaires-statistics-dataset</a
         >
       </p>
       <p>
-        [2]
-        <a href="https://www.gapminder.org/fw/world-health-chart/"
+        [2] Rosling, H. (n.d.). World Health Chart. Gapminder.<a
+          href="https://www.gapminder.org/fw/world-health-chart/"
           >https://www.gapminder.org/fw/world-health-chart/</a
         >
       </p>
@@ -131,6 +130,7 @@
       ;(async () => {
         let finalData
         const data = await d3.csv("/data/df_ready.csv")
+        console.log(data)
         const processedData = data.reduce((accumulator, current) => {
           let {
             country_of_residence,
@@ -139,32 +139,29 @@
             age,
             country_pop,
             continent,
+            tax_rate,
           } = current
           wealth = +wealth // 将字符串转换为数字
           country_pop = +country_pop // 转换为数字
           age = +age // 确保年龄是数字类型
+          tax_rate = +tax_rate
 
           // 如果这个国家还没有被加入到累加器中，添加它
           if (!accumulator[country_of_residence]) {
             accumulator[country_of_residence] = {
               country: country_of_residence,
               total_wealth: 0,
-              total_age: 0, // 新增：总年龄
-              average_age: 0, // 新增：平均年龄
               average_life_expectancy: life_expectancy,
               population: country_pop,
               continent: continent,
               billionaires: 0,
+              tax_rate,
             }
           }
 
           // 累加财富和亿万富翁人数
           accumulator[country_of_residence].total_wealth += wealth
-          accumulator[country_of_residence].total_age += age // 累加年龄
           accumulator[country_of_residence].billionaires += 1
-          accumulator[country_of_residence].average_age =
-            accumulator[country_of_residence].total_age /
-            accumulator[country_of_residence].billionaires // 计算平均年龄
 
           return accumulator
         }, {})
@@ -175,7 +172,7 @@
         // 画布大小
         var svgWidth = 900,
           svgHeight = 550
-        var margin = { top: 10, right: 170, bottom: 90, left: 60 }
+        var margin = { top: 15, right: 170, bottom: 90, left: 60 }
         var width = svgWidth - margin.left - margin.right
         var height = svgHeight - margin.top - margin.bottom
 
@@ -229,7 +226,7 @@
           .style("text-anchor", "middle")
           .style("font-size", "16px")
           .style("color", "#383e40")
-          .text("Average Age of Billionaires (Years)")
+          .text("Tax Rate (%)")
 
         const customTickValues = [
           31250, 62500, 125000, 250000, 500000, 1000000, 2000000, 4000000,
@@ -249,10 +246,7 @@
 
         var y = d3
           .scaleLinear()
-          .domain([
-            d3.min(finalData, (d) => d.average_age), // 使用平均年龄的最小值作为Y轴的起点
-            d3.max(finalData, (d) => d.average_age), // 使用平均年龄的最大值作为Y轴的终点
-          ])
+          .domain([0, d3.max(finalData, (d) => d.tax_rate)]) // 假设税率是从 0 到最大值
           .range([height, 0])
         // 添加X轴
         svg
@@ -335,6 +329,15 @@
           })
           .style("cursor", "pointer")
 
+        // 在图例上方添加Bubble Size说明
+        svg
+          .append("text")
+          .attr("x", legendPosition.x - 22)
+          .attr("y", legendPosition.y - 30) // 根据需要调整位置
+          .text("Bubble Size: Population") // 文本内容
+          .style("font-size", "14px") // 调整字体大小
+          .style("color", "#495561") // 调整字体颜色
+
         // 把bubble放到图表上
         svg
           .selectAll(".bubble")
@@ -346,7 +349,7 @@
             return x(d.total_wealth)
           })
           .attr("cy", function (d) {
-            return y(d.average_life_expectancy)
+            return y(d.tax_rate)
           })
           .attr("r", function (d) {
             return z(d.population)
@@ -384,14 +387,17 @@
               .style("visibility", "visible")
               .html(
                 d.country +
+                  "<br/>Population: " +
+                  (d.population / 1e6).toFixed(2) +
+                  " million" +
                   " <br/>Billionaires Number: " +
                   d.billionaires +
                   "<br/>Total Wealth: " +
                   d.total_wealth / 10000 +
                   " trillion" +
-                  "<br/>Population: " +
-                  (d.population / 1e6).toFixed(2) +
-                  " million"
+                  "<br/>Tax Rate: " +
+                  d.tax_rate +
+                  "%"
               )
 
             // 当鼠标悬浮在一个气泡上时，将这个气泡的透明度设为0.8，并将其他所有气泡的透明度设为0.1
