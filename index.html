@@ -104,12 +104,12 @@
 
   <body>
     <h1 class="ubuntu-medium">
-      Billionaires 2023: Wealth and Tax Policies Worldwide
+      Global Wealth Map 2023: Billionaires, Taxes, and Population
     </h1>
     <div class="desc">
-      This interactive tool delves deep into the realms of global finance,
-      showcasing the cumulative wealth of billionaires in each country plotted
-      against the backdrop of national tax rates.
+      The purpose of this visualization is to explore and analyze the
+      relationship between billionaires' wealth accumulation, tax policies, and
+      population size in different countries around the world.
     </div>
     <div id="chart"></div>
     <div class="tooltip"></div>
@@ -135,7 +135,10 @@
     <script>
       ;(async () => {
         let finalData
-        const data = await d3.csv("./data/df_ready.csv")
+        const rawData = await d3.csv("./data/df_ready.csv")
+        const data = rawData.filter(
+          (d) => +d.tax_rate <= 100 && +d.tax_rate > 0
+        )
         const processedData = data.reduce((accumulator, current) => {
           let {
             country_of_residence,
@@ -173,7 +176,7 @@
         // svg size
         var svgWidth = 1000,
           svgHeight = 550
-        var margin = { top: 17, right: 170, bottom: 90, left: 60 }
+        var margin = { top: 18, right: 170, bottom: 90, left: 60 }
         var width = svgWidth - margin.left - margin.right
         var height = svgHeight - margin.top - margin.bottom
 
@@ -201,11 +204,7 @@
           .append("text")
           .attr(
             "transform",
-            "translate(" +
-              (width - 10) +
-              "," +
-              (height / 2 - 80) +
-              ") rotate(-90)"
+            "translate(" + (width - 100) + "," + (height / 2 + 200) + ") "
           )
           .attr("text-anchor", "middle")
           .style("font-size", "1.8vw")
@@ -258,7 +257,7 @@
           .append("g")
           .attr("class", "axis")
           .attr("transform", "translate(0," + height + ")")
-          .call(d3.axisBottom(x).tickFormat((d) => `${d / 10000}`))
+          .call(d3.axisBottom(x).tickFormat((d) => `${d / 1000}`))
 
         svg.append("g").attr("class", "axis").call(d3.axisLeft(y).ticks(10))
 
