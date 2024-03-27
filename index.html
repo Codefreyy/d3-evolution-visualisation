@@ -14,7 +14,7 @@
 
     <style>
       html {
-        overflow: hidden;
+        overflow-x: hidden;
       }
       * {
         font-family: "sans-serif";
@@ -41,7 +41,7 @@
       h3 {
         font-weight: 800;
         font-family: "Noto Sans";
-        font-size: 20px;
+        font-size: 16px;
         margin-top: 10px;
         color: #465562;
       }
@@ -57,6 +57,10 @@
         padding: 5px 10px;
         border-radius: 5px;
         visibility: hidden;
+      }
+
+      .legend text {
+        font-size: 12px;
       }
 
       .axis line {
@@ -89,11 +93,11 @@
       }
 
       .reference {
-        font-size: 13px;
+        font-size: 12px;
       }
 
       .desc {
-        max-width: 800px;
+        max-width: 70vw;
       }
     </style>
   </head>
@@ -119,7 +123,15 @@
         >
       </p>
       <p>
-        [2] Rosling, H. (n.d.). World Health Chart. Gapminder.<a
+        [2] Javier_SAB. (2024, February 24).
+        <a
+          href="Billionaires dataset cleaned. Kaggle. https://www.kaggle.com/datasets/javiersab/billionaires-dataset-cleaned/data "
+          >Billionaires dataset cleaned. Kaggle.
+          https://www.kaggle.com/datasets/javiersab/billionaires-dataset-cleaned/data
+        </a>
+      </p>
+      <p>
+        [3] Rosling, H. (n.d.). World Health Chart. Gapminder.<a
           href="https://www.gapminder.org/fw/world-health-chart/"
           >https://www.gapminder.org/fw/world-health-chart/</a
         >
@@ -170,8 +182,8 @@
         console.log("finalData", finalData)
 
         // 画布大小
-        var svgWidth = 900,
-          svgHeight = 550
+        var svgWidth = window.innerWidth * 0.55,
+          svgHeight = window.innerHeight * 0.6
         var margin = { top: 15, right: 170, bottom: 90, left: 60 }
         var width = svgWidth - margin.left - margin.right
         var height = svgHeight - margin.top - margin.bottom
@@ -204,7 +216,24 @@
         //   .attr("y", 0) // 根据需要调整位置
         //   .attr("width", width)
         //   .attr("height", height) // 根据需要调整高度
-        //   .style("fill", "#fff") // 调整背景颜色
+        //   .style("fill", "#fefefe") // 调整背景颜色
+
+        // Adding text to the background
+        svg
+          .append("text")
+          .attr(
+            "transform",
+            "translate(" +
+              (width - 10) +
+              "," +
+              (height / 2 - 80) +
+              ") rotate(-90)"
+          )
+          .attr("text-anchor", "middle")
+          .style("font-size", "1.8vw")
+          .text("Size: Population")
+          .style("fill", "#c7ccd0")
+          .style("opacity", "0.6")
 
         // x轴标题
         var xTitle = svg
@@ -214,7 +243,7 @@
           .style("text-anchor", "middle")
           .style("font-size", "16px") // 调整字体大小
           .style("color", "#383e40")
-          .text("Total wealth of billionaries (US dollars trillion)")
+          .text("Total wealth of billionaries (billion US dollars)")
 
         // y轴标题
         var yTitle = svg
@@ -257,6 +286,25 @@
 
         // 添加y轴
         svg.append("g").attr("class", "axis").call(d3.axisLeft(y).ticks(10))
+
+        // Y轴网格线
+        svg
+          .append("g")
+          .attr("class", "grid")
+          .call(d3.axisLeft(y).tickSize(-width).tickFormat(""))
+          .selectAll("line")
+          .style("stroke", "lightgrey")
+          .style("stroke-opacity", "0.5")
+
+        // X轴网格线
+        svg
+          .append("g")
+          .attr("class", "grid")
+          .attr("transform", "translate(0," + height + ")")
+          .call(d3.axisBottom(x).tickSize(-height).tickFormat(""))
+          .selectAll("line")
+          .style("stroke", "lightgrey")
+          .style("stroke-opacity", "0.4")
 
         // bubble size
         var z = d3
@@ -309,7 +357,7 @@
           })
           .style("text-anchor", "start")
           .style("alignment-baseline", "middle")
-          .style("color", "#000000")
+          .style("color", "#495561")
 
         // 图例交互 - 悬浮筛选
         legend
@@ -335,7 +383,7 @@
           .attr("x", legendPosition.x - 22)
           .attr("y", legendPosition.y - 30) // 根据需要调整位置
           .text("Bubble Size: Population") // 文本内容
-          .style("font-size", "14px") // 调整字体大小
+          .style("font-size", "12px") // 调整字体大小
           .style("color", "#495561") // 调整字体颜色
 
         // 把bubble放到图表上
@@ -359,25 +407,6 @@
           })
           .style("fill-opacity", 0.7)
 
-        // Y轴网格线
-        svg
-          .append("g")
-          .attr("class", "grid")
-          .call(d3.axisLeft(y).tickSize(-width).tickFormat(""))
-          .selectAll("line")
-          .style("stroke", "lightgrey")
-          .style("stroke-opacity", "0.5")
-
-        // X轴网格线
-        svg
-          .append("g")
-          .attr("class", "grid")
-          .attr("transform", "translate(0," + height + ")")
-          .call(d3.axisBottom(x).tickSize(-height).tickFormat(""))
-          .selectAll("line")
-          .style("stroke", "lightgrey")
-          .style("stroke-opacity", "0.4")
-
         // 添加悬浮提示
         var tooltip = d3.select(".tooltip")
         svg
@@ -393,8 +422,8 @@
                   " <br/>Billionaires Number: " +
                   d.billionaires +
                   "<br/>Total Wealth: " +
-                  d.total_wealth / 10000 +
-                  " trillion" +
+                  d.total_wealth / 1000 +
+                  " billion" +
                   "<br/>Tax Rate: " +
                   d.tax_rate +
                   "%"
