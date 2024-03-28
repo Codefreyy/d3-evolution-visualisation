@@ -17,6 +17,8 @@
         overflow-x: hidden;
       }
       * {
+        margin: 0;
+        padding: 0;
         font-family: "sans-serif";
         font-weight: 300;
         margin: 10px;
@@ -57,6 +59,16 @@
         padding: 5px 10px;
         border-radius: 5px;
         visibility: hidden;
+      }
+
+      .tooltip p {
+        background-color: rgb(55, 55, 55);
+        margin: 0;
+        color: whitesmoke;
+      }
+
+      .tooltip #countryName {
+        font-weight: 600;
       }
 
       .legend text {
@@ -104,7 +116,7 @@
 
   <body>
     <h1 class="ubuntu-medium">
-      Global Wealth Map 2023: Billionaires, Taxes, and Population
+      Global Wealth 2023: Billionaires, Taxes, and Population
     </h1>
     <div class="desc">
       The purpose of this visualization is to explore and analyze the
@@ -117,10 +129,11 @@
       <h3>References</h3>
 
       <p>
-        [1] Javier_SAB. (2024, February 24).
+        [1] Javier_SAB. (2024, February 24). Billionaires dataset cleaned.
+        Kaggle.
         <a
-          href="Billionaires dataset cleaned. Kaggle. https://www.kaggle.com/datasets/javiersab/billionaires-dataset-cleaned/data "
-          >Billionaires dataset cleaned. Kaggle.
+          href="https://www.kaggle.com/datasets/javiersab/billionaires-dataset-cleaned/data "
+        >
           https://www.kaggle.com/datasets/javiersab/billionaires-dataset-cleaned/data
         </a>
       </p>
@@ -173,260 +186,284 @@
         }, {})
         finalData = Object.values(processedData)
 
-        // svg size
-        var svgWidth = 1000,
-          svgHeight = 550
-        var margin = { top: 18, right: 170, bottom: 90, left: 60 }
-        var width = svgWidth - margin.left - margin.right
-        var height = svgHeight - margin.top - margin.bottom
+        function drawChart() {
+          // 移除旧的SVG元素（如果存在）
+          d3.select("#chart svg").remove()
+          // svg size
+          var svgWidth = innerWidth * 0.6,
+            svgHeight = innerHeight * 0.65
+          var margin = { top: 18, right: 170, bottom: 90, left: 60 }
+          var width = svgWidth - margin.left - margin.right
+          var height = svgHeight - margin.top - margin.bottom
 
-        var svg = d3
-          .select("#chart")
-          .append("svg")
-          .attr("width", svgWidth)
-          .attr("height", svgHeight)
-          .append("g")
-          .attr(
-            "transform",
-            "translate(" + margin.left + "," + margin.top + ")"
-          )
+          var svg = d3
+            .select("#chart")
+            .append("svg")
+            .attr("width", svgWidth)
+            .attr("height", svgHeight)
+            .append("g")
+            .attr(
+              "transform",
+              "translate(" + margin.left + "," + margin.top + ")"
+            )
 
-        // title
-        svg
-          .append("text")
-          .attr("x", width / 2)
-          .attr("y", -20)
-          .attr("text-anchor", "middle")
-          .style("font-size", "24px")
-          .text("Global Wealth and Life Expectancy")
+          // title
+          svg
+            .append("text")
+            .attr("x", width / 2)
+            .attr("y", -20)
+            .attr("text-anchor", "middle")
+            .style("font-size", "24px")
+            .text("Global Wealth and Life Expectancy")
 
-        svg
-          .append("text")
-          .attr(
-            "transform",
-            "translate(" + (width - 100) + "," + (height / 2 + 200) + ") "
-          )
-          .attr("text-anchor", "middle")
-          .style("font-size", "1.8vw")
-          .text("Size: Population")
-          .style("fill", "#c7ccd0")
+          svg
+            .append("text")
+            .attr("x", width / 2 + width / 4) // 保持在宽度的一半，即中心
+            .attr("y", height + margin.top - 30) // 确保总是在x轴上方15px
+            .attr("text-anchor", "middle")
+            .style("font-size", "1.8vw")
+            .text("Bubble Size: Population")
+            .style("fill", "#c7ccd0")
 
-        var xTitle = svg
-          .append("text")
-          .attr("x", width / 2)
-          .attr("y", height + margin.bottom - 40)
-          .style("text-anchor", "middle")
-          .style("font-size", "16px")
-          .style("color", "#383e40")
-          .text("Total wealth of billionaries (billion US dollars)")
+          var xTitle = svg
+            .append("text")
+            .attr("x", width / 2)
+            .attr("y", height + margin.bottom - 40)
+            .style("text-anchor", "middle")
+            .style("font-size", "16px")
+            .style("color", "#383e40")
+            .text("Total wealth of billionaries (billion US dollars)")
 
-        var yTitle = svg
-          .append("text")
-          .attr("transform", "rotate(-90)")
-          .attr("y", 0 - margin.left)
-          .attr("x", 0 - height / 2)
-          .attr("dy", "1em")
-          .style("text-anchor", "middle")
-          .style("font-size", "16px")
-          .style("color", "#383e40")
-          .text("Tax Rate (%)")
+          var yTitle = svg
+            .append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("y", 0 - margin.left)
+            .attr("x", 0 - height / 2)
+            .attr("dy", "1em")
+            .style("text-anchor", "middle")
+            .style("font-size", "16px")
+            .style("color", "#383e40")
+            .text("Tax Rate (%)")
 
-        const customTickValues = [
-          31250, 62500, 125000, 250000, 500000, 1000000, 2000000, 4000000,
-          8000000,
-        ]
-        // x axis
-        var x = d3
-          .scaleSqrt()
-          .domain([
-            0,
-            d3.max(finalData, function (d) {
-              return d.total_wealth
-            }),
-          ])
-          .range([0, width])
-          .nice()
+          const customTickValues = [
+            31250, 62500, 125000, 250000, 500000, 1000000, 2000000, 4000000,
+            8000000,
+          ]
+          // x axis
+          var x = d3
+            .scaleSqrt()
+            .domain([
+              0,
+              d3.max(finalData, function (d) {
+                return d.total_wealth
+              }),
+            ])
+            .range([0, width])
+            .nice()
 
-        // y axis
-        var y = d3
-          .scaleLinear()
-          .domain([0, d3.max(finalData, (d) => d.tax_rate)])
-          .range([height, 0])
+          // y axis
+          var y = d3
+            .scaleLinear()
+            .domain([0, d3.max(finalData, (d) => d.tax_rate)])
+            .range([height, 0])
 
-        svg
-          .append("g")
-          .attr("class", "axis")
-          .attr("transform", "translate(0," + height + ")")
-          .call(d3.axisBottom(x).tickFormat((d) => `${d / 1000}`))
+          svg
+            .append("g")
+            .attr("class", "axis")
+            .attr("transform", "translate(0," + height + ")")
+            .call(d3.axisBottom(x).tickFormat((d) => `${d / 1000}`))
 
-        svg.append("g").attr("class", "axis").call(d3.axisLeft(y).ticks(10))
+          svg.append("g").attr("class", "axis").call(d3.axisLeft(y).ticks(10))
 
-        // grid line
-        svg
-          .append("g")
-          .attr("class", "grid")
-          .call(d3.axisLeft(y).tickSize(-width).tickFormat(""))
-          .selectAll("line")
-          .style("stroke", "lightgrey")
-          .style("stroke-opacity", "0.5")
+          // grid line
+          svg
+            .append("g")
+            .attr("class", "grid")
+            .call(d3.axisLeft(y).tickSize(-width).tickFormat(""))
+            .selectAll("line")
+            .style("stroke", "lightgrey")
+            .style("stroke-opacity", "0.5")
 
-        svg
-          .append("g")
-          .attr("class", "grid")
-          .attr("transform", "translate(0," + height + ")")
-          .call(d3.axisBottom(x).tickSize(-height).tickFormat(""))
-          .selectAll("line")
-          .style("stroke", "lightgrey")
-          .style("stroke-opacity", "0.4")
+          svg
+            .append("g")
+            .attr("class", "grid")
+            .attr("transform", "translate(0," + height + ")")
+            .call(d3.axisBottom(x).tickSize(-height).tickFormat(""))
+            .selectAll("line")
+            .style("stroke", "lightgrey")
+            .style("stroke-opacity", "0.4")
 
-        // bubble size
-        var z = d3
-          .scaleSqrt()
-          .domain([
-            0,
-            d3.max(finalData, function (d) {
-              return d.population
-            }),
-          ])
-          .range([8, 60])
+          // bubble size
+          var z = d3
+            .scaleSqrt()
+            .domain([
+              0,
+              d3.max(finalData, function (d) {
+                return d.population
+              }),
+            ])
+            .range([8, 60])
 
-        // bubble color
-        var color = d3
-          .scaleOrdinal(d3.schemeCategory10)
-          .domain(finalData.map((d) => d.continent))
+          // bubble color
+          var color = d3
+            .scaleOrdinal(d3.schemeCategory10)
+            .domain(finalData.map((d) => d.continent))
 
-        // legend
-        var legendPosition = { x: width + 40, y: height - 200 }
+          // legend
+          var legendPosition = { x: width + 40, y: height - 200 }
 
-        // add legend to page
-        var legend = svg
-          .selectAll(".legend")
-          .data(color.domain()) // color range
-          .enter()
-          .append("g")
-          .attr("class", "legend")
-          .attr("transform", function (d, i) {
-            return "translate(0," + i * 5 + ")"
-          }) // vertical position of each legend item
+          // add legend to page
+          var legend = svg
+            .selectAll(".legend")
+            .data(color.domain()) // color range
+            .enter()
+            .append("g")
+            .attr("class", "legend")
+            .attr("transform", function (d, i) {
+              return "translate(0," + i * 5 + ")"
+            }) // vertical position of each legend item
 
-        // draw color circle for each legend
-        legend
-          .append("circle")
-          .attr("cx", legendPosition.x)
-          .attr("cy", function (d, i) {
-            return legendPosition.y + i * 25
-          })
-          .attr("r", 10)
-          .style("fill", color)
-          .style("opacity", 0.7)
-
-        // legend text
-        legend
-          .append("text")
-          .attr("x", legendPosition.x + 20)
-          .attr("y", function (d, i) {
-            return legendPosition.y + i * 25
-          })
-          .text(function (d) {
-            return d
-          })
-          .style("text-anchor", "start")
-          .style("alignment-baseline", "middle")
-          .style("color", "#495561")
-
-        // hover and filter
-        legend
-          .on("mouseover", function (event, selectedContinent) {
-            svg.selectAll(".bubble").style("opacity", function (d) {
-              return d.continent === selectedContinent ? 0.7 : 0.1
+          // draw color circle for each legend
+          legend
+            .append("circle")
+            .attr("cx", legendPosition.x)
+            .attr("cy", function (d, i) {
+              return legendPosition.y + i * 25
             })
+            .attr("r", 10)
+            .style("fill", color)
+            .style("opacity", 0.7)
 
-            svg
-              .selectAll(".bubble")
-              .filter((d) => d.continent === selectedContinent)
-              .raise()
+          // legend text
+          legend
+            .append("text")
+            .attr("x", legendPosition.x + 20)
+            .attr("y", function (d, i) {
+              return legendPosition.y + i * 25
+            })
+            .text(function (d) {
+              return d
+            })
+            .style("text-anchor", "start")
+            .style("alignment-baseline", "middle")
+            .style("color", "#495561")
 
-            svg
-              .selectAll(".legend circle")
-              .filter(function (d) {
-                return d === selectedContinent
+          // hover and filter
+          legend
+            .on("mouseover", function (event, selectedContinent) {
+              svg.selectAll(".bubble").style("opacity", function (d) {
+                return d.continent === selectedContinent ? 0.7 : 0.1
               })
-              .transition()
-              .duration(200)
-              .attr("r", 12) // Increase radius
-          })
-          .on("mouseout", function (event, selectedContinent) {
-            svg.selectAll(".bubble").style("opacity", 0.7)
 
-            svg
-              .selectAll(".legend circle")
-              .filter(function (d) {
-                return d === selectedContinent
-              })
-              .transition()
-              .duration(200)
-              .attr("r", 10) // Return to original radius
-          })
-          .style("cursor", "pointer")
+              svg
+                .selectAll(".bubble")
+                .filter((d) => d.continent === selectedContinent)
+                .raise()
 
-        // draw bubbles
-        svg
-          .selectAll(".bubble")
-          .data(finalData)
-          .enter()
-          .append("circle")
-          .attr("class", "bubble")
-          .attr("cx", function (d) {
-            return x(d.total_wealth)
-          })
-          .attr("cy", function (d) {
-            return y(d.tax_rate)
-          })
-          .attr("r", function (d) {
-            return z(d.population)
-          })
-          .style("fill", function (d) {
-            return color(d.continent)
-          })
-          .style("opacity", 0.7)
+              svg
+                .selectAll(".legend circle")
+                .filter(function (d) {
+                  return d === selectedContinent
+                })
+                .transition()
+                .duration(200)
+                .attr("r", 12) // Increase radius
+            })
+            .on("mouseout", function (event, selectedContinent) {
+              svg.selectAll(".bubble").style("opacity", 0.7)
 
-        // hover and show tooltip
-        var tooltip = d3.select(".tooltip")
-        svg
-          .selectAll(".bubble")
-          .on("mouseover", function (event, d) {
-            tooltip
-              .style("visibility", "visible")
-              .html(
-                d.country +
-                  "<br/>Population: " +
-                  (d.population / 1e6).toFixed(2) +
-                  " million" +
-                  "<br/>Billionaires Number: " +
-                  d.billionaires +
-                  "<br/>Total Wealth: " +
-                  d.total_wealth / 1000 +
-                  " billion" +
-                  "<br/>Tax Rate: " +
-                  d.tax_rate +
-                  "%"
-              )
+              svg
+                .selectAll(".legend circle")
+                .filter(function (d) {
+                  return d === selectedContinent
+                })
+                .transition()
+                .duration(200)
+                .attr("r", 10) // Return to original radius
+            })
+            .style("cursor", "pointer")
 
-            d3.selectAll(".bubble").style("opacity", 0.1)
-            d3.select(this).style("opacity", 0.7)
+          // draw bubbles
+          svg
+            .selectAll(".bubble")
+            .data(finalData)
+            .enter()
+            .append("circle")
+            .attr("class", "bubble")
+            .attr("cx", function (d) {
+              return x(d.total_wealth)
+            })
+            .attr("cy", function (d) {
+              return y(d.tax_rate)
+            })
+            .attr("r", function (d) {
+              return z(d.population)
+            })
+            .style("fill", function (d) {
+              return color(d.continent)
+            })
+            .style("opacity", 0.7)
 
-            d3.select(this).style("cursor", "pointer")
-          })
-          .on("mousemove", function (event, d) {
-            tooltip
-              .style("top", event.pageY - 10 + "px")
-              .style("left", event.pageX + 10 + "px")
-          })
-          .on("mouseout", function () {
-            tooltip.style("visibility", "hidden")
-            d3.selectAll(".bubble").style("opacity", 0.7)
-            d3.select(this).style("cursor", "default")
-          })
+          // hover and show tooltip
+          var tooltip = d3.select(".tooltip")
+          svg
+            .selectAll(".bubble")
+            .on("mouseover", function (event, d) {
+              tooltip
+                .style("visibility", "visible")
+                .html(
+                  "<p id='countryName'>" +
+                    d.country +
+                    "</p><p>Population: " +
+                    (d.population / 1e6).toFixed(2) +
+                    " million</p><p>Billionaires Number: " +
+                    d.billionaires +
+                    "</p><p>Total Wealth: " +
+                    d.total_wealth / 1000 +
+                    " billion</p><p>Tax Rate: " +
+                    d.tax_rate +
+                    "%</p>"
+                )
+
+              d3.selectAll(".bubble").style("opacity", 0.1)
+              d3.select(this).style("opacity", 0.7)
+
+              d3.select(this).style("cursor", "pointer")
+            })
+            .on("mousemove", function (event, d) {
+              tooltip
+                .style("top", event.pageY - 10 + "px")
+                .style("left", event.pageX + 10 + "px")
+            })
+            .on("mouseout", function () {
+              tooltip.style("visibility", "hidden")
+              d3.selectAll(".bubble").style("opacity", 0.7)
+              d3.select(this).style("cursor", "default")
+            })
+        }
+
+        drawChart()
+
+        window.addEventListener(
+          "resize",
+          debounce(function () {
+            drawChart()
+          }, 250)
+        )
+
+        function debounce(func, wait, immediate) {
+          var timeout
+          return function () {
+            var context = this,
+              args = arguments
+            clearTimeout(timeout)
+            timeout = setTimeout(function () {
+              timeout = null
+              if (!immediate) func.apply(context, args)
+            }, wait)
+            if (immediate && !timeout) func.apply(context, args)
+          }
+        }
       })()
     </script>
   </body>
