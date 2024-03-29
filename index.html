@@ -666,6 +666,8 @@
             .attr("class", "y axis")
             .attr("transform", "translate(" + width + ", 0)")
             .call(d3.axisRight(y))
+            .selectAll(".tick text")
+            .attr("dy", "-1px") // 设置dy属性
         }
 
         drawIndustryGenderChart()
