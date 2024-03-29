@@ -448,8 +448,6 @@
         drawBubbleChart()
 
         async function drawIndustryGenderChart(residence) {
-          console.log("res", residence)
-
           d3.select("#bar-chart svg").remove()
           let processedIndustryData
           let countryData
@@ -479,7 +477,6 @@
           }))
           processedIndustryData.sort((a, b) => a.total - b.total)
 
-          console.log({ processedIndustryData })
           // SVG尺寸设置
           let svgWidth = innerWidth * 0.3,
             svgHeight = innerHeight * 0.65
@@ -495,6 +492,8 @@
             .attr("height", svgHeight)
             .append("g")
             .attr("transform", `translate(${margin.left},${margin.top})`)
+
+          // legend
 
           // 创建X和Y比例尺
           const x = d3.scaleLinear().rangeRound([0, width])
@@ -527,13 +526,19 @@
                 .attr("height", y.bandwidth() / 2)
                 .attr("fill", "pink") // 女性用粉色表示
             })
+          // .append("text")
+          // .attr("x", (d) => x(d.Male + d.Female) + 1) // 在bar的右侧留一点间距
+          // .attr("y", (d) => y(d.industry) + y.bandwidth()) // 调整文本的垂直位置使其居中
+          // .text((d) => d.Male + d.Female)
+          // .style("font-size", "12px")
+          // .style("fill", "#B0B0B0") // 浅灰色
 
           // 添加X轴和Y轴
           svg
             .append("g")
             .attr("class", "x axis")
             .attr("transform", `translate(0,${height})`)
-            .call(d3.axisBottom(x))
+            .call(d3.axisBottom(x).ticks(5))
 
           svg.append("g").attr("class", "y axis").call(d3.axisLeft(y))
         }
@@ -543,7 +548,7 @@
         window.addEventListener(
           "resize",
           debounce(function () {
-            drawChart()
+            drawBubbleChart()
             drawIndustryGenderChart()
           }, 250)
         )
