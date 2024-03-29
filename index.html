@@ -196,27 +196,6 @@
         }, {})
         bubbleChartData = Object.values(processedData)
 
-        console.log(data)
-        // industry data
-        let industryData = rawData.reduce((acc, curr) => {
-          if (!acc[curr.industry]) {
-            acc[curr.industry] = { M: 0, F: 0 }
-          }
-          acc[curr.industry][curr.gender] += 1
-          return acc
-        }, {})
-
-        console.log({ industryData })
-        let processedIndustryData = Object.keys(industryData).map(
-          (industry) => ({
-            industry,
-            Male: industryData[industry].M,
-            Female: industryData[industry].F,
-            total: industryData[industry].M + industryData[industry].F,
-          })
-        )
-        processedIndustryData.sort((a, b) => a.total - b.total)
-
         function drawBubbleChart() {
           // remove old svg element
           d3.select("#chart svg").remove()
@@ -431,6 +410,8 @@
           svg
             .selectAll(".bubble")
             .on("mouseover", function (event, d) {
+              drawIndustryGenderChart(d.country)
+
               tooltip
                 .style("visibility", "visible")
                 .html(
@@ -458,6 +439,7 @@
                 .style("left", event.pageX + 10 + "px")
             })
             .on("mouseout", function () {
+              drawIndustryGenderChart()
               tooltip.style("visibility", "hidden")
               d3.selectAll(".bubble").style("opacity", 0.7)
               d3.select(this).style("cursor", "default")
@@ -465,11 +447,43 @@
         }
         drawBubbleChart()
 
-        async function drawIndustryGenderChart() {
+        async function drawIndustryGenderChart(residence) {
+          console.log("res", residence)
+
+          d3.select("#bar-chart svg").remove()
+          let processedIndustryData
+          let countryData
+          console.log({ rawData })
+          if (residence) {
+            countryData = rawData.filter(
+              (d) => d.country_of_residence === residence
+            )
+          } else {
+            countryData = rawData
+          }
+
+          console.log({ countryData })
+          let industryData = countryData.reduce((acc, curr) => {
+            if (!acc[curr.industry]) {
+              acc[curr.industry] = { M: 0, F: 0 }
+            }
+            acc[curr.industry][curr.gender] += 1
+            return acc
+          }, {})
+
+          processedIndustryData = Object.keys(industryData).map((industry) => ({
+            industry,
+            Male: industryData[industry].M,
+            Female: industryData[industry].F,
+            total: industryData[industry].M + industryData[industry].F,
+          }))
+          processedIndustryData.sort((a, b) => a.total - b.total)
+
+          console.log({ processedIndustryData })
           // SVG尺寸设置
-          let svgWidth = innerWidth * 0.4,
+          let svgWidth = innerWidth * 0.3,
             svgHeight = innerHeight * 0.65
-          const margin = { top: 20, right: 20, bottom: 30, left: 100 }
+          const margin = { top: 20, right: 20, bottom: 90, left: 175 }
           const width = svgWidth - margin.left - margin.right
           const height = svgHeight - margin.top - margin.bottom
 
