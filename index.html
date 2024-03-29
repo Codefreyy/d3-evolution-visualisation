@@ -369,6 +369,8 @@
                 .transition()
                 .duration(200)
                 .attr("r", 12) // Increase radius
+
+              drawIndustryGenderChart(null, selectedContinent)
             })
             .on("mouseout", function (event, selectedContinent) {
               svg.selectAll(".bubble").style("opacity", 0.7)
@@ -381,6 +383,8 @@
                 .transition()
                 .duration(200)
                 .attr("r", 10) // Return to original radius
+
+              drawIndustryGenderChart()
             })
             .style("cursor", "pointer")
 
@@ -447,7 +451,7 @@
         }
         drawBubbleChart()
 
-        async function drawIndustryGenderChart(residence) {
+        async function drawIndustryGenderChart(residence, continent) {
           d3.select("#bar-chart svg").remove()
           let processedIndustryData
           let countryData
@@ -456,6 +460,8 @@
             countryData = rawData.filter(
               (d) => d.country_of_residence === residence
             )
+          } else if (continent) {
+            countryData = rawData.filter((d) => d.continent === continent)
           } else {
             countryData = rawData
           }
@@ -480,7 +486,7 @@
           // SVG尺寸设置
           let svgWidth = innerWidth * 0.3,
             svgHeight = innerHeight * 0.65
-          const margin = { top: 20, right: 150, bottom: 90, left: 40 }
+          const margin = { top: 30, right: 150, bottom: 85, left: 40 }
           const width = svgWidth - margin.left - margin.right
           const height = svgHeight - margin.top - margin.bottom
 
@@ -494,6 +500,26 @@
             .attr("transform", `translate(${margin.left},${margin.top})`)
 
           // legend
+          const genderColors = { Female: "pink", Male: "#759ec7" }
+          const legendItems = svg
+            .selectAll(".gender-legend")
+            .data(Object.entries(genderColors))
+            .enter()
+            .append("g")
+            .attr("transform", (d, i) => `translate(${i * 60}, -30)`) // Adjust positioning
+
+          legendItems
+            .append("rect")
+            .attr("width", 10)
+            .attr("height", 10)
+            .attr("fill", (d) => d[1])
+
+          legendItems
+            .append("text")
+            .attr("x", 15)
+            .attr("y", 10)
+            .style("font-size", "10px")
+            .text((d) => d[0])
 
           // 创建X和Y比例尺
           const x = d3.scaleLinear().rangeRound([width, 0])
@@ -503,6 +529,16 @@
           x.domain([0, d3.max(processedIndustryData, (d) => d.Male + d.Female)])
           y.domain(processedIndustryData.map((d) => d.industry))
 
+          // x title
+          svg
+            .append("text")
+            .attr("class", "x axis-title")
+            .attr("text-anchor", "middle")
+            .attr("x", width / 2)
+            .attr("y", height + 50) // Adjust this value to position below the x-axis
+            .style("font-size", "16px")
+            .text("Billionaires Count")
+
           // 绘制柱状图
           svg
             .selectAll(".bar")
@@ -511,13 +547,37 @@
             .append("g")
             .attr("transform", (d) => `translate(0, ${y(d.industry)})`)
             .each(function (d) {
+              const group = d3.select(this)
+              const tooltip = d3.select(".tooltip") // 选择页面上的.tooltip元素
+
               d3.select(this)
+                .style("cursor", "pointer")
                 .append("rect")
                 .attr("class", "bar")
                 .attr("x", x(d.Male))
                 .attr("width", width - x(d.Male))
                 .attr("height", y.bandwidth() / 2)
                 .attr("fill", "#759ec7") // 男性用蓝色表示
+                .on("mouseover", function (event) {
+                  // 当鼠标悬停时显示tooltip
+                  tooltip
+                    .style("visibility", "visible")
+                    .html(`Male billionaires in ${d.industry}: ${d.Male}`)
+                    .style("left", event.pageX + 10 + "px")
+                    .style("top", event.pageY + 10 + "px")
+
+                  d3.select(this).attr("fill", "#2c59b7")
+                })
+                .on("mousemove", function (event, d) {
+                  tooltip
+                    .style("top", event.pageY - 10 + "px")
+                    .style("left", event.pageX + 10 + "px")
+                })
+                .on("mouseout", function () {
+                  // 当鼠标移开时隐藏tooltip
+                  tooltip.style("visibility", "hidden")
+                  d3.select(this).attr("fill", "#759ec7")
+                })
 
               d3.select(this)
                 .append("rect")
@@ -526,6 +586,36 @@
                 .attr("width", x(d.Male) - x(d.Male + d.Female))
                 .attr("height", y.bandwidth() / 2)
                 .attr("fill", "pink") // 女性用粉色表示
+                .on("mouseover", function (event) {
+                  // 当鼠标悬停时显示tooltip
+                  tooltip
+                    .style("visibility", "visible")
+                    .html(`Female billionaires in ${d.industry}: ${d.Female}`)
+                    .style("left", event.pageX + 10 + "px")
+                    .style("top", event.pageY + 10 + "px")
+
+                  d3.select(this).attr("fill", "#ec8582")
+                })
+                .on("mousemove", function (event, d) {
+                  tooltip
+                    .style("top", event.pageY - 10 + "px")
+                    .style("left", event.pageX + 10 + "px")
+                })
+                .on("mouseout", function () {
+                  // 当鼠标移开时隐藏tooltip
+                  tooltip.style("visibility", "hidden")
+                  d3.select(this).attr("fill", "pink")
+                })
+                .style("cursor", "pointer")
+
+              group
+                .append("text")
+                .attr("x", x(d.Male + d.Female) - 5) // Position text to the left of the bar end
+                .attr("y", y.bandwidth() / 4 + 5) // Adjust vertically to align within the bar's height
+                .attr("text-anchor", "end") // Right-align text to make it end at the specified x position
+                .style("font-size", "12px")
+                .style("fill", "#495561") // Set text color
+                .text(d.Male + d.Female) // Display the total count
             })
           // .append("text")
           // .attr("x", (d) => x(d.Male + d.Female) + 1) // 在bar的右侧留一点间距
