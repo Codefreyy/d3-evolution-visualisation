@@ -111,6 +111,12 @@
       .desc {
         max-width: 70vw;
       }
+
+      .chart-section {
+        display: flex;
+        gap: 10px;
+        justify-content: space-between;
+      }
     </style>
   </head>
 
@@ -123,7 +129,11 @@
       relationship between billionaires' wealth accumulation, tax policies, and
       population size in different countries around the world.
     </div>
-    <div id="chart"></div>
+    <div class="chart-section">
+      <div id="chart"></div>
+      <div id="bar-chart"></div>
+    </div>
+
     <div class="tooltip"></div>
     <div class="reference">
       <h3>References</h3>
@@ -147,7 +157,7 @@
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script>
       ;(async () => {
-        let finalData
+        let bubbleChartData
         const rawData = await d3.csv("./data/df_ready.csv")
         const data = rawData.filter(
           (d) => +d.tax_rate <= 100 && +d.tax_rate > 0
@@ -184,10 +194,31 @@
 
           return accumulator
         }, {})
-        finalData = Object.values(processedData)
+        bubbleChartData = Object.values(processedData)
 
-        function drawChart() {
-          // 移除旧的SVG元素（如果存在）
+        console.log(data)
+        // industry data
+        let industryData = rawData.reduce((acc, curr) => {
+          if (!acc[curr.industry]) {
+            acc[curr.industry] = { M: 0, F: 0 }
+          }
+          acc[curr.industry][curr.gender] += 1
+          return acc
+        }, {})
+
+        console.log({ industryData })
+        let processedIndustryData = Object.keys(industryData).map(
+          (industry) => ({
+            industry,
+            Male: industryData[industry].M,
+            Female: industryData[industry].F,
+            total: industryData[industry].M + industryData[industry].F,
+          })
+        )
+        processedIndustryData.sort((a, b) => a.total - b.total)
+
+        function drawBubbleChart() {
+          // remove old svg element
           d3.select("#chart svg").remove()
           // svg size
           var svgWidth = innerWidth * 0.6,
@@ -245,7 +276,7 @@
             .scaleSqrt()
             .domain([
               0,
-              d3.max(finalData, function (d) {
+              d3.max(bubbleChartData, function (d) {
                 return d.total_wealth
               }),
             ])
@@ -255,7 +286,7 @@
           // y axis
           var y = d3
             .scaleLinear()
-            .domain([0, d3.max(finalData, (d) => d.tax_rate)])
+            .domain([0, d3.max(bubbleChartData, (d) => d.tax_rate)])
             .range([height, 0])
 
           svg
@@ -289,7 +320,7 @@
             .scaleSqrt()
             .domain([
               0,
-              d3.max(finalData, function (d) {
+              d3.max(bubbleChartData, function (d) {
                 return d.population
               }),
             ])
@@ -298,7 +329,7 @@
           // bubble color
           var color = d3
             .scaleOrdinal(d3.schemeCategory10)
-            .domain(finalData.map((d) => d.continent))
+            .domain(bubbleChartData.map((d) => d.continent))
 
           // legend
           var legendPosition = { x: width + 40, y: height - 200 }
@@ -377,7 +408,7 @@
           // draw bubbles
           svg
             .selectAll(".bubble")
-            .data(finalData)
+            .data(bubbleChartData)
             .enter()
             .append("circle")
             .attr("class", "bubble")
@@ -432,13 +463,74 @@
               d3.select(this).style("cursor", "default")
             })
         }
+        drawBubbleChart()
 
-        drawChart()
+        async function drawIndustryGenderChart() {
+          // SVG尺寸设置
+          let svgWidth = innerWidth * 0.4,
+            svgHeight = innerHeight * 0.65
+          const margin = { top: 20, right: 20, bottom: 30, left: 100 }
+          const width = svgWidth - margin.left - margin.right
+          const height = svgHeight - margin.top - margin.bottom
+
+          // 创建SVG容器
+          const svg = d3
+            .select("#bar-chart")
+            .append("svg")
+            .attr("width", svgWidth)
+            .attr("height", svgHeight)
+            .append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`)
+
+          // 创建X和Y比例尺
+          const x = d3.scaleLinear().rangeRound([0, width])
+          const y = d3.scaleBand().rangeRound([height, 0]).padding(0.1)
+
+          // 配置比例尺域
+          x.domain([0, d3.max(processedIndustryData, (d) => d.Male + d.Female)])
+          y.domain(processedIndustryData.map((d) => d.industry))
+
+          // 绘制柱状图
+          svg
+            .selectAll(".bar")
+            .data(processedIndustryData)
+            .enter()
+            .append("g")
+            .attr("transform", (d) => `translate(0, ${y(d.industry)})`)
+            .each(function (d) {
+              d3.select(this)
+                .append("rect")
+                .attr("class", "bar")
+                .attr("width", x(d.Male))
+                .attr("height", y.bandwidth() / 2)
+                .attr("fill", "#759ec7") // 男性用蓝色表示
+
+              d3.select(this)
+                .append("rect")
+                .attr("class", "bar")
+                .attr("x", x(d.Male))
+                .attr("width", x(d.Female))
+                .attr("height", y.bandwidth() / 2)
+                .attr("fill", "pink") // 女性用粉色表示
+            })
+
+          // 添加X轴和Y轴
+          svg
+            .append("g")
+            .attr("class", "x axis")
+            .attr("transform", `translate(0,${height})`)
+            .call(d3.axisBottom(x))
+
+          svg.append("g").attr("class", "y axis").call(d3.axisLeft(y))
+        }
+
+        drawIndustryGenderChart()
 
         window.addEventListener(
           "resize",
           debounce(function () {
             drawChart()
+            drawIndustryGenderChart()
           }, 250)
         )
 
