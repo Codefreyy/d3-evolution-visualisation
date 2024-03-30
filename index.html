@@ -163,7 +163,7 @@
     <script>
       ;(async () => {
         let bubbleChartData
-        const rawData = await d3.csv("./data/df_ready.csv")
+        const rawData = await d3.csv("data/df_ready.csv")
         const data = rawData.filter(
           (d) => +d.tax_rate <= 100 && +d.tax_rate > 0
         )
@@ -224,8 +224,8 @@
 
           svg
             .append("text")
-            .attr("x", width / 2 + width / 4) // 保持在宽度的一半，即中心
-            .attr("y", height + margin.top - 30) // 确保总是在x轴上方15px
+            .attr("x", width / 2 + width / 4)
+            .attr("y", height + margin.top - 30)
             .attr("text-anchor", "middle")
             .style("font-size", "1.8vw")
             .text("Bubble Size: Population")
@@ -674,7 +674,6 @@
             .selectAll(".tick text")
             .attr("dy", "-1px") // 设置dy属性
         }
-
         drawIndustryGenderChart()
 
         window.addEventListener(
